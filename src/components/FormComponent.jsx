@@ -1,14 +1,6 @@
 import React from "react";
 import axios from "axios";
 
-const paymentData = {
-  agentId: "",
-  memberId: "",
-  merchantId: "",
-  account: "",
-  redirectUrl: "",
-};
-
 export class FormComponent extends React.Component {
   constructor(props) {
     super(props);
@@ -18,58 +10,90 @@ export class FormComponent extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  componentDidMount() {
-    // получить qrcId
-    axios
-      .post(`/payment/v1/qrc-id-reservation`, {
-        quantity: 1,
-      })
-      .then((res) => {
-        this.setState({ qrcId: res.data.qrcIds[0] });
-      });
-
-    // регистрация Кассовой ссылки СБП
-    axios
-      .post(`/payment/v1/cash-register-qrc`, {
-        agentId: paymentData.agentId,
-        memberId: paymentData.memberId,
-        merchantId: paymentData.merchantId,
-        account: paymentData.account,
-        redirectUrl: paymentData.redirectUrl,
-        qrcId: this.state.qrcId,
-      })
-      .then((res) => {
-        this.setState({ qrcId: res.data.qrcIds[0] });
-      });
-  }
+  componentDidMount() {}
 
   handleChange(event) {
     this.setState({ price: event.target.value });
-    
   }
 
   handleSubmit(event) {
-    console.log("handle only submit")
-    // активация Кассовой ссылки СБП
+    console.log("handle only submit");
+    // init
     axios
-      .post(`/payment/v1/cash-register-qrc/${this.state.qrcId}/params`, {
-        amount: this.state.price * 100,
-      }).then((res) => {
-        alert("Result:" + res.data.message)
+      .post(`https://securepay.tinkoff.ru/v2/Init`, {
+        TerminalKey: "TinkoffBankTest",
+        Amount: 140000,
+        OrderId: "21050",
+        Description: "Подарочная карта на 1400.00 рублей",
+        DATA: {
+          Phone: "+71234567890",
+          Email: "a@test.com",
+        },
+        Receipt: {
+          Email: "a@test.ru",
+          Phone: "+79031234567",
+          EmailCompany: "b@test.ru",
+          Taxation: "osn",
+          Items: [
+            {
+              Name: "Наименование товара 1",
+              Price: 10000,
+              Quantity: 1.0,
+              Amount: 10000,
+              PaymentMethod: "full_prepayment",
+              PaymentObject: "commodity",
+              Tax: "vat10",
+              Ean13: "0123456789",
+            },
+            {
+              Name: "Наименование товара 2",
+              Price: 20000,
+              Quantity: 2.0,
+              Amount: 40000,
+              PaymentMethod: "prepayment",
+              PaymentObject: "service",
+              Tax: "vat20",
+            },
+            {
+              Name: "Наименование товара 3",
+              Price: 30000,
+              Quantity: 3.0,
+              Amount: 90000,
+              Tax: "vat10",
+            },
+          ],
+        },
       })
-      
-    alert("A price was submitted: " + this.state.price);
+      .then((res) => {
+        this.setState({ paymentId: res.data.PaymentId });
+      });
+
+      const tokenText = 'foo'
+      const token = window.crypto.subtle.digest('SHA-256', tokenText)
+
+    // getQr
+    axios
+      .post(`https://securepay.tinkoff.ru/v2/SbpPayTest`,{
+        "PaymentId":"10063",
+        "TerminalKey": "1623341225522",
+        "Token":token
+        })
+      .then((res) => {
+        alert("Result:" + res);
+      });
+
+    // alert("A price was submitted: " + this.state.price);
     event.preventDefault();
   }
 
   render() {
     return (
       <form onSubmit={this.handleSubmit}>
-        <div class="mb-3">
-          <label class="form-label text-dark">
+        <div className="mb-3">
+          <label className="form-label text-dark">
             Сумма
             <input
-              class="form-control"
+              className="form-control"
               type="number"
               min="1"
               step="any"
@@ -78,7 +102,7 @@ export class FormComponent extends React.Component {
             />
           </label>
         </div>
-        <button type="submit" class="btn btn-success">
+        <button type="submit" className="btn btn-success">
           Сгенерировать
         </button>
       </form>
