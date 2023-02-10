@@ -1,14 +1,13 @@
 import React from "react";
 import axios from "axios";
-import * as shajs from 'sha.js';
+import * as shajs from "sha.js";
 import { TERMINAL_KEY, ORDER_ID, PASSWORD } from "../constants/const";
 import { api, getQr, init } from "../constants/urls";
-
 
 export class FormComponent extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { price: 0, qrcId: "" };
+    this.state = { price: 0 };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -30,22 +29,19 @@ export class FormComponent extends React.Component {
         OrderId: ORDER_ID,
       })
       .then((res) => {
-        this.setState({ paymentId: res.data.PaymentId });
-      });
+        const tokenText = PASSWORD + res.data.PaymentId + TERMINAL_KEY;
+        const token = shajs("sha256").update(tokenText).digest("hex");
 
-    const tokenText = PASSWORD + this.state.paymentId + TERMINAL_KEY;
-
-    const token = shajs('sha256').update(tokenText).digest('hex')
-  
-    // getQr
-    axios
-      .post(`${api}/${getQr}`, {
-        TerminalKey: TERMINAL_KEY,
-        PaymentId: this.state.paymentId,
-        Token: token,
-      })
-      .then((res) => {
-        alert("Result:" + res.data.Data);
+        // getQr
+        axios
+          .post(`${api}/${getQr}`, {
+            TerminalKey: TERMINAL_KEY,
+            PaymentId: res.data.PaymentId,
+            Token: token,
+          })
+          .then((res) => {
+            alert("Result:" + res.data.Data);
+          });
       });
 
     event.preventDefault();
