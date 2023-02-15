@@ -2,12 +2,25 @@ import React from "react";
 import axios from "axios";
 import * as shajs from "sha.js";
 import { TERMINAL_KEY, ORDER_ID, PASSWORD } from "../constants/const";
-import { api, getQr, init } from "../constants/urls";
+import { api, getQr, getState, init } from "../constants/urls";
+
+
+const sendStatusRequest = async (paymentId) => {
+  const tokenText = PASSWORD + paymentId + TERMINAL_KEY;
+  const token = shajs("sha256").update(tokenText).digest("hex");
+  const resp = await axios.post(`${api}/${getState}`, {
+    TerminalKey: TERMINAL_KEY,
+    PaymentId: paymentId,
+    Token: token,
+  });
+  console.log( resp.data);
+  alert(resp.data.Status)
+};
 
 export class FormComponent extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { price: 0 };
+    this.state = { price: 0 , paymentId: ''};
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -31,6 +44,7 @@ export class FormComponent extends React.Component {
       .then((res) => {
         const tokenText = PASSWORD + res.data.PaymentId + TERMINAL_KEY;
         const token = shajs("sha256").update(tokenText).digest("hex");
+        this.setState({ paymentId: res.data.PaymentId});
 
         // getQr
         axios
@@ -41,6 +55,7 @@ export class FormComponent extends React.Component {
           })
           .then((res) => {
             alert("Result:" + res.data.Data);
+
           });
       });
 
@@ -49,6 +64,7 @@ export class FormComponent extends React.Component {
 
   render() {
     return (
+      <>
       <form onSubmit={this.handleSubmit}>
         <div className="mb-3">
           <label className="form-label text-dark">
@@ -66,7 +82,12 @@ export class FormComponent extends React.Component {
         <button type="submit" className="btn btn-success">
           Сгенерировать ссылку
         </button>
+       
       </form>
+       <button  className="btn btn-primary" onClick={() => sendStatusRequest(this.state.paymentId)}>
+       узнать статус моей оплаты
+      </button>
+      </>
     );
   }
 }
