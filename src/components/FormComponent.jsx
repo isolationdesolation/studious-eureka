@@ -85,7 +85,7 @@ export class FormComponent extends React.Component {
        
       </form>
        <button  className="btn btn-primary" onClick={() => sendStatusRequest(this.state.paymentId)}>
-       узнать статус моей оплаты
+       узнать статус вот этой оплаты
       </button>
       </>
     );
